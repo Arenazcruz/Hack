@@ -6,7 +6,7 @@ import 'gastronomic_route_screen.dart';
 class TouristHomeScreen extends StatelessWidget {
   const TouristHomeScreen({super.key});
 
-  static const routeName = '/tourist';
+  static const routeName = '/tourist-home';
 
   @override
   Widget build(BuildContext context) {

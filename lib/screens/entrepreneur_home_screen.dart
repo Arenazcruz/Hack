@@ -6,7 +6,7 @@ import 'entrepreneur_profile_screen.dart';
 class EntrepreneurHomeScreen extends StatelessWidget {
   const EntrepreneurHomeScreen({super.key});
 
-  static const routeName = '/entrepreneur';
+  static const routeName = '/entrepreneur-home';
 
   @override
   Widget build(BuildContext context) {

@@ -6,29 +6,75 @@ class AuthService {
 
   final FirebaseAuth _firebaseAuth;
 
-  Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
-
-  Future<UserCredential> signIn({
-    required String email,
-    required String password,
-  }) {
-    return _firebaseAuth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+  Stream<User?> authStateChanges() {
+    return _firebaseAuth.authStateChanges();
   }
 
-  Future<UserCredential> register({
-    required String email,
-    required String password,
-  }) {
-    return _firebaseAuth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+  User? get currentUser => _firebaseAuth.currentUser;
+
+  Future<UserCredential> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
+    try {
+      return await _firebaseAuth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+    } on FirebaseAuthException catch (error) {
+      throw AuthServiceException(_authErrorMessage(error));
+    }
   }
 
-  Future<void> signOut() {
-    return _firebaseAuth.signOut();
+  Future<UserCredential> registerWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
+    try {
+      return await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+    } on FirebaseAuthException catch (error) {
+      throw AuthServiceException(_authErrorMessage(error));
+    }
+  }
+
+  Future<void> signOut() async {
+    try {
+      await _firebaseAuth.signOut();
+    } on FirebaseAuthException catch (error) {
+      throw AuthServiceException(_authErrorMessage(error));
+    }
+  }
+}
+
+class AuthServiceException implements Exception {
+  const AuthServiceException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+String _authErrorMessage(FirebaseAuthException error) {
+  switch (error.code) {
+    case 'invalid-email':
+      return 'Correo electrónico inválido.';
+    case 'user-not-found':
+      return 'No existe una cuenta con este correo.';
+    case 'wrong-password':
+      return 'Contraseña incorrecta.';
+    case 'invalid-credential':
+      return 'Credenciales incorrectas.';
+    case 'email-already-in-use':
+      return 'Este correo ya está registrado.';
+    case 'weak-password':
+      return 'La contraseña debe tener al menos 6 caracteres.';
+    case 'network-request-failed':
+      return 'Error de conexión. Revisa tu internet.';
+    default:
+      return 'Ocurrió un error. Intenta nuevamente.';
   }
 }

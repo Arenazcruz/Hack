@@ -24,7 +24,7 @@ class UserProfile {
       uid: _readString(data['uid']),
       name: _readString(data['name']),
       email: _readString(data['email']),
-      role: _readString(data['role'], fallback: 'tourist'),
+      role: _readString(data['role'], fallback: 'client'),
       city: _readString(data['city']),
       createdAt: _readDateTime(data['createdAt']),
     );
