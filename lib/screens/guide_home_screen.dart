@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../widgets/dashboard_widgets.dart';
 import 'welcome_screen.dart';
 
 class GuideHomeScreen extends StatelessWidget {
@@ -20,42 +21,61 @@ class GuideHomeScreen extends StatelessWidget {
     }
   }
 
+  void _showPendingMessage(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Esta funcionalidad se implementará después'),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F4),
-      appBar: AppBar(
-        title: const Text('SUMAQ IA'),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Dashboard de guías',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFF211B17),
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
+    return SumaqDashboardScaffold(
+      title: 'SUMAQ IA',
+      onSignOut: () => _signOut(context),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1180),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const DashboardHero(
+                  title: 'Panel guía turístico',
+                  subtitle:
+                      'Crea rutas turísticas y conecta experiencias gastronómicas guiadas.',
+                  icon: Icons.map,
                 ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Gestiona rutas y servicios turísticos en SUMAQ IA.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF6F625A), fontSize: 16),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () => _signOut(context),
-                child: const Text('Cerrar sesión'),
-              ),
-            ],
+                const SizedBox(height: 26),
+                const DashboardSectionTitle(title: 'Herramientas de guía'),
+                const SizedBox(height: 16),
+                ResponsiveDashboardGrid(
+                  children: [
+                    DashboardActionCard(
+                      icon: Icons.route,
+                      title: 'Crear rutas turísticas',
+                      subtitle:
+                          'Diseña recorridos con sabores y cultura local.',
+                      onTap: () => _showPendingMessage(context),
+                    ),
+                    DashboardActionCard(
+                      icon: Icons.explore,
+                      title: 'Experiencias guiadas',
+                      subtitle: 'Organiza servicios para visitantes.',
+                      onTap: () => _showPendingMessage(context),
+                    ),
+                    DashboardActionCard(
+                      icon: Icons.auto_awesome,
+                      title: 'Recomendaciones IA',
+                      subtitle: 'Mejora tus rutas con ayuda inteligente.',
+                      onTap: () => _showPendingMessage(context),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

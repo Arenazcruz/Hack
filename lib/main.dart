@@ -16,7 +16,6 @@ import 'screens/gastronomic_route_screen.dart';
 import 'screens/guide_home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/role_selection_screen.dart';
 import 'screens/tourist_home_screen.dart';
 import 'screens/welcome_screen.dart';
 
@@ -49,7 +48,6 @@ class SumaqRutaApp extends StatelessWidget {
           WelcomeScreen.welcomeRouteName: (_) => const WelcomeScreen(),
           LoginScreen.routeName: (_) => const LoginScreen(),
           RegisterScreen.routeName: (_) => const RegisterScreen(),
-          RoleSelectionScreen.routeName: (_) => const RoleSelectionScreen(),
           ClientHomeScreen.routeName: (_) => const ClientHomeScreen(),
           EntrepreneurHomeScreen.routeName: (_) =>
               const EntrepreneurHomeScreen(),

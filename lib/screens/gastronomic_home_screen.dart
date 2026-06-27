@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../widgets/dashboard_widgets.dart';
 import 'welcome_screen.dart';
 
 class GastronomicHomeScreen extends StatelessWidget {
@@ -20,63 +21,62 @@ class GastronomicHomeScreen extends StatelessWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return _PlaceholderRoleHome(
-      title: 'Dashboard gastronómico',
-      subtitle: 'Gestiona tu negocio gastronómico en SUMAQ IA.',
-      onSignOut: () => _signOut(context),
+  void _showPendingMessage(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Esta funcionalidad se implementará después'),
+      ),
     );
   }
-}
-
-class _PlaceholderRoleHome extends StatelessWidget {
-  const _PlaceholderRoleHome({
-    required this.title,
-    required this.subtitle,
-    required this.onSignOut,
-  });
-
-  final String title;
-  final String subtitle;
-  final VoidCallback onSignOut;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F4),
-      appBar: AppBar(
-        title: const Text('SUMAQ IA'),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF211B17),
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
+    return SumaqDashboardScaffold(
+      title: 'SUMAQ IA',
+      onSignOut: () => _signOut(context),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1180),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const DashboardHero(
+                  title: 'Panel gastronómico',
+                  subtitle:
+                      'Gestiona tu negocio gastronómico, experiencias y oportunidades con turistas.',
+                  icon: Icons.restaurant_menu,
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF6F625A), fontSize: 16),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: onSignOut,
-                child: const Text('Cerrar sesión'),
-              ),
-            ],
+                const SizedBox(height: 26),
+                const DashboardSectionTitle(title: 'Gestión del negocio'),
+                const SizedBox(height: 16),
+                ResponsiveDashboardGrid(
+                  children: [
+                    DashboardActionCard(
+                      icon: Icons.store,
+                      title: 'Gestionar negocio gastronómico',
+                      subtitle: 'Actualiza datos, ciudad, categoría y oferta.',
+                      onTap: () => _showPendingMessage(context),
+                    ),
+                    DashboardActionCard(
+                      icon: Icons.add_business,
+                      title: 'Crear experiencias',
+                      subtitle:
+                          'Convierte tu comida en una experiencia turística.',
+                      onTap: () => _showPendingMessage(context),
+                    ),
+                    DashboardActionCard(
+                      icon: Icons.groups,
+                      title: 'Ver reservas o interesados',
+                      subtitle:
+                          'Consulta turistas interesados en tus propuestas.',
+                      onTap: () => _showPendingMessage(context),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

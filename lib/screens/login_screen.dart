@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/admin_seed_service.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/role_redirect_service.dart';
@@ -24,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _authService = AuthService();
   final _firestoreService = FirestoreService();
+  final _adminSeedService = AdminSeedService();
 
   bool _isLoading = false;
 
@@ -54,6 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
 
+      await _adminSeedService.ensureCurrentUserAdminIfAllowed();
       final profile = await _firestoreService.getUserProfile(user.uid);
 
       if (!mounted) {
@@ -100,36 +103,22 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F4),
       body: SafeArea(
-        child: Stack(
-          children: [
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1180),
-                  child: isWide
-                      ? Row(
-                          children: [
-                            const Expanded(child: _BrandPanel()),
-                            const SizedBox(width: 28),
-                            Expanded(child: _LoginCard(form: _buildForm())),
-                          ],
-                        )
-                      : _LoginCard(form: _buildForm()),
-                ),
-              ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1180),
+              child: isWide
+                  ? Row(
+                      children: [
+                        const Expanded(child: _BrandPanel()),
+                        const SizedBox(width: 28),
+                        Expanded(child: _LoginCard(form: _buildForm())),
+                      ],
+                    )
+                  : _LoginCard(form: _buildForm()),
             ),
-            Positioned(
-              left: 12,
-              top: 12,
-              child: IconButton(
-                tooltip: 'Volver',
-                onPressed: _isLoading ? null : _goToWelcome,
-                icon: const Icon(Icons.arrow_back),
-                color: const Color(0xFF3A2B22),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -173,6 +162,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     );
                   },
             child: const Text('¿No tienes cuenta? Crear cuenta'),
+          ),
+          TextButton(
+            onPressed: _isLoading ? null : _goToWelcome,
+            child: const Text('Volver al inicio'),
           ),
         ],
       ),
@@ -355,12 +348,21 @@ String? _validateRequiredEmail(String? value) {
     return 'El correo es obligatorio.';
   }
 
+  if (!email.contains('@') || !email.contains('.')) {
+    return 'Ingresa un correo válido.';
+  }
+
   return null;
 }
 
 String? _validateRequiredPassword(String? value) {
-  if ((value ?? '').isEmpty) {
+  final password = value ?? '';
+  if (password.isEmpty) {
     return 'La contraseña es obligatoria.';
+  }
+
+  if (password.length < 6) {
+    return 'La contraseña debe tener al menos 6 caracteres.';
   }
 
   return null;

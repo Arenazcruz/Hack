@@ -9,6 +9,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import 'client_home_screen.dart';
 import 'login_screen.dart';
+import 'welcome_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -94,6 +95,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  void _goToWelcome() {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      WelcomeScreen.routeName,
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthPageLayout(
@@ -166,6 +175,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         );
                       },
                 child: const Text('¿Ya tienes cuenta? Inicia sesión'),
+              ),
+              TextButton(
+                onPressed: _isLoading ? null : _goToWelcome,
+                child: const Text('Volver al inicio'),
               ),
             ],
           ),
