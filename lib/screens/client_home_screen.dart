@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../models/role_request.dart';
 import '../services/auth_service.dart';
+import '../services/role_request_service.dart';
+import '../utils/display_labels.dart';
+import 'entrepreneur_request_form_screen.dart';
 import 'experience_list_screen.dart';
+import 'gastronomic_request_form_screen.dart';
+import 'guide_request_form_screen.dart';
 import 'welcome_screen.dart';
 
 class ClientHomeScreen extends StatelessWidget {
@@ -33,6 +39,18 @@ class ClientHomeScreen extends StatelessWidget {
     );
   }
 
+  void _openEntrepreneurRequest(BuildContext context) {
+    Navigator.pushNamed(context, EntrepreneurRequestFormScreen.routeName);
+  }
+
+  void _openGuideRequest(BuildContext context) {
+    Navigator.pushNamed(context, GuideRequestFormScreen.routeName);
+  }
+
+  void _openGastronomicRequest(BuildContext context) {
+    Navigator.pushNamed(context, GastronomicRequestFormScreen.routeName);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,8 +78,8 @@ class ClientHomeScreen extends StatelessWidget {
                               );
                             },
                             onCreateBusiness: () =>
-                                _showPendingMessage(context),
-                            onOfferRoute: () => _showPendingMessage(context),
+                                _openEntrepreneurRequest(context),
+                            onOfferRoute: () => _openGuideRequest(context),
                           ),
                           const SizedBox(height: 26),
                           const _KpiGrid(),
@@ -73,8 +91,15 @@ class ClientHomeScreen extends StatelessWidget {
                                 ExperienceListScreen.routeName,
                               );
                             },
+                            onCreateBusiness: () =>
+                                _openEntrepreneurRequest(context),
+                            onOfferRoute: () => _openGuideRequest(context),
+                            onGastronomic: () =>
+                                _openGastronomicRequest(context),
                             onPending: () => _showPendingMessage(context),
                           ),
+                          const SizedBox(height: 30),
+                          const _MyRoleRequestsSection(),
                           const SizedBox(height: 30),
                           const _RecentActivitySection(),
                         ],
@@ -379,7 +404,7 @@ class _WelcomeCopy extends StatelessWidget {
                 onPressed: onCreateBusiness,
               ),
               _OutlineOrangeButton(
-                label: 'Ofrecer ruta turística',
+                label: 'Ofrecer servicios como guía turístico',
                 onPressed: onOfferRoute,
               ),
             ],
@@ -531,10 +556,16 @@ class _KpiCard extends StatelessWidget {
 class _QuickActionsSection extends StatelessWidget {
   const _QuickActionsSection({
     required this.onExplore,
+    required this.onCreateBusiness,
+    required this.onOfferRoute,
+    required this.onGastronomic,
     required this.onPending,
   });
 
   final VoidCallback onExplore;
+  final VoidCallback onCreateBusiness;
+  final VoidCallback onOfferRoute;
+  final VoidCallback onGastronomic;
   final VoidCallback onPending;
 
   @override
@@ -569,15 +600,31 @@ class _QuickActionsSection extends StatelessWidget {
                 title: 'Crear mi emprendimiento',
                 subtitle:
                     'Solicita habilitar tu perfil para publicar un negocio local.',
-                actionLabel: 'Iniciar solicitud',
-                onTap: onPending,
+                actionLabel: 'Crear mi emprendimiento',
+                onTap: onCreateBusiness,
+              ),
+              _ActionCard(
+                icon: Icons.restaurant_menu,
+                title: 'Registrar negocio gastronómico',
+                subtitle:
+                    'Registra los datos de tu negocio gastronómico para solicitar verificación.',
+                actionLabel: 'Registrar negocio gastronómico',
+                onTap: onGastronomic,
+              ),
+              _ActionCard(
+                icon: Icons.route,
+                title: 'Ofrecer servicios como guía turístico',
+                subtitle:
+                    'Solicita verificación para ofrecer servicios turísticos locales.',
+                actionLabel: 'Solicitar perfil de guía turístico',
+                onTap: onOfferRoute,
               ),
               _ActionCard(
                 icon: Icons.auto_awesome,
                 title: 'Recomendaciones con IA',
                 subtitle:
                     'Recibe ideas para rutas, contenidos y experiencias turísticas.',
-                actionLabel: 'Ver recomendaciones',
+                actionLabel: 'Ver recomendaciones con IA',
                 onTap: onPending,
               ),
             ];
@@ -691,6 +738,151 @@ class _ActionCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MyRoleRequestsSection extends StatelessWidget {
+  const _MyRoleRequestsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(
+          title: 'Mis solicitudes',
+          subtitle: 'Revisa el estado de tus solicitudes de verificación.',
+        ),
+        const SizedBox(height: 16),
+        StreamBuilder<List<RoleRequest>>(
+          stream: RoleRequestService().getMyRoleRequests(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const _ContentCard(
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return const _ContentCard(
+                child: Text(
+                  'No se pudieron cargar tus solicitudes.',
+                  style: TextStyle(
+                    color: ClientHomeScreen._mutedColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              );
+            }
+
+            final requests = snapshot.data ?? const <RoleRequest>[];
+
+            if (requests.isEmpty) {
+              return const _ContentCard(
+                child: Text(
+                  'Aún no enviaste solicitudes de verificación.',
+                  style: TextStyle(
+                    color: ClientHomeScreen._mutedColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              );
+            }
+
+            return Column(
+              children: [
+                for (final request in requests) ...[
+                  _MyRoleRequestRow(request: request),
+                  if (request != requests.last) const SizedBox(height: 12),
+                ],
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _MyRoleRequestRow extends StatelessWidget {
+  const _MyRoleRequestRow({required this.request});
+
+  final RoleRequest request;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = request.fechaSolicitud;
+    final dateLabel = date == null
+        ? 'Fecha no disponible'
+        : '${date.day.toString().padLeft(2, '0')}/'
+              '${date.month.toString().padLeft(2, '0')}/'
+              '${date.year}';
+    final statusColor = switch (request.estado) {
+      'aprobado' => const Color(0xFF15803D),
+      'rechazado' => const Color(0xFFB91C1C),
+      _ => ClientHomeScreen._primaryColor,
+    };
+
+    return _ContentCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  request.nombreLugar,
+                  style: const TextStyle(
+                    color: ClientHomeScreen._textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  requestStatusLabel(request.estado),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${requestTypeLabel(request.tipoSolicitud)} • $dateLabel',
+            style: const TextStyle(
+              color: ClientHomeScreen._mutedColor,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (request.estado == 'aprobado') ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Tu perfil fue aprobado. Vuelve a iniciar sesión o actualiza la sesión para ingresar a tu nuevo panel.',
+              style: TextStyle(
+                color: Color(0xFF15803D),
+                fontSize: 13,
+                height: 1.35,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

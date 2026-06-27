@@ -1,0 +1,325 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userExists() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userRole() {
+      return userExists() ? userDoc().data.role : null;
+    }
+
+    function isAdmin() {
+      return signedIn() && userRole() in ['administrador', 'admin'];
+    }
+
+    function isAdminBootstrap() {
+      return signedIn() && request.auth.token.email == 'admin@sumaqia.com';
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function validUserRole(role) {
+      return role in [
+        'cliente',
+        'emprendedor',
+        'gastronomico',
+        'guia',
+        'turista',
+        'administrador',
+        'client',
+        'entrepreneur',
+        'gastronomic',
+        'guide',
+        'tourist',
+        'admin'
+      ];
+    }
+
+    function validRequestedRole(role) {
+      return role in ['emprendedor', 'gastronomico', 'guia', 'turista'];
+    }
+
+    function validRequestStatus(status) {
+      return status in ['pendiente', 'aprobado', 'rechazado'];
+    }
+
+    function validRequestType(type) {
+      return type in [
+        'emprendimiento',
+        'negocio_gastronomico',
+        'guia_turistico',
+        'ruta_turistica',
+        'turista'
+      ];
+    }
+
+    function canManageEntrepreneurProfile() {
+      return userRole() in [
+        'emprendedor',
+        'gastronomico',
+        'administrador',
+        'entrepreneur',
+        'gastronomic',
+        'admin'
+      ];
+    }
+
+    function hasEntrepreneurBaseFields() {
+      return request.resource.data.keys().hasAll([
+        'id',
+        'uid',
+        'ownerName',
+        'businessName',
+        'city',
+        'location',
+        'category',
+        'description',
+        'phone',
+        'status',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function hasEntrepreneurProductFields() {
+      return request.resource.data.keys().hasAll([
+        'id',
+        'ownerUid',
+        'businessId',
+        'name',
+        'description',
+        'category',
+        'price',
+        'city',
+        'available',
+        'imageUrl',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function hasBaseRequestFields() {
+      return request.resource.data.keys().hasAll([
+        'id',
+        'uid',
+        'nombreUsuario',
+        'email',
+        'rolActual',
+        'rolSolicitado',
+        'tipoSolicitud',
+        'nombreLugar',
+        'ubicacion',
+        'ciudad',
+        'descripcion',
+        'telefonoContacto',
+        'estado',
+        'fechaSolicitud'
+      ]);
+    }
+
+    match /users/{userId} {
+      allow create: if (
+        isOwner(userId) &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.role in ['cliente', 'client']
+      ) || (
+        isAdminBootstrap() &&
+        isOwner(userId) &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.email == request.auth.token.email &&
+        request.resource.data.role == 'administrador'
+      );
+
+      allow read: if isOwner(userId) || isAdmin();
+
+      allow update: if (
+        isOwner(userId) &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.role == resource.data.role
+      ) || (
+        isAdmin() &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.email == resource.data.email &&
+        validUserRole(request.resource.data.role)
+      ) || (
+        isAdminBootstrap() &&
+        isOwner(userId) &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.email == request.auth.token.email &&
+        request.resource.data.role == 'administrador'
+      );
+
+      allow delete: if false;
+    }
+
+    match /role_requests/{requestId} {
+      allow create: if signedIn() &&
+        hasBaseRequestFields() &&
+        request.resource.data.id == requestId &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.estado == 'pendiente' &&
+        request.resource.data.rolActual == userRole() &&
+        validRequestedRole(request.resource.data.rolSolicitado) &&
+        validRequestType(request.resource.data.tipoSolicitud) &&
+        request.resource.data.nombreLugar is string &&
+        request.resource.data.ubicacion is string &&
+        request.resource.data.ciudad is string &&
+        request.resource.data.descripcion is string &&
+        request.resource.data.telefonoContacto is string &&
+        request.resource.data.fechaSolicitud is timestamp;
+
+      allow read: if signedIn() &&
+        (resource.data.uid == request.auth.uid || isAdmin());
+
+      allow update: if isAdmin() &&
+        resource.data.estado == 'pendiente' &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.rolActual == resource.data.rolActual &&
+        request.resource.data.rolSolicitado == resource.data.rolSolicitado &&
+        request.resource.data.tipoSolicitud == resource.data.tipoSolicitud &&
+        request.resource.data.nombreLugar == resource.data.nombreLugar &&
+        request.resource.data.ubicacion == resource.data.ubicacion &&
+        request.resource.data.ciudad == resource.data.ciudad &&
+        request.resource.data.descripcion == resource.data.descripcion &&
+        request.resource.data.telefonoContacto == resource.data.telefonoContacto &&
+        request.resource.data.categoria == resource.data.categoria &&
+        request.resource.data.horarios == resource.data.horarios &&
+        request.resource.data.referencias == resource.data.referencias &&
+        request.resource.data.redSocial == resource.data.redSocial &&
+        request.resource.data.sitioWeb == resource.data.sitioWeb &&
+        request.resource.data.experienciaPrevia == resource.data.experienciaPrevia &&
+        request.resource.data.idiomas == resource.data.idiomas &&
+        request.resource.data.disponibilidad == resource.data.disponibilidad &&
+        request.resource.data.zonasTrabajo == resource.data.zonasTrabajo &&
+        request.resource.data.tipoServicio == resource.data.tipoServicio &&
+        request.resource.data.motivacion == resource.data.motivacion &&
+        request.resource.data.lugaresIncluidos == resource.data.lugaresIncluidos &&
+        request.resource.data.duracionAproximada == resource.data.duracionAproximada &&
+        request.resource.data.estado in ['aprobado', 'rechazado'] &&
+        request.resource.data.fechaRevision is timestamp &&
+        request.resource.data.revisadoPor == request.auth.uid;
+
+      allow delete: if isAdmin();
+    }
+
+    match /entrepreneurs/{docId} {
+      allow read: if true;
+
+      allow create: if signedIn() &&
+        canManageEntrepreneurProfile() &&
+        docId == request.auth.uid &&
+        hasEntrepreneurBaseFields() &&
+        request.resource.data.id == request.auth.uid &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.ownerName is string &&
+        request.resource.data.businessName is string &&
+        request.resource.data.city is string &&
+        request.resource.data.location is string &&
+        request.resource.data.category is string &&
+        request.resource.data.description is string &&
+        request.resource.data.phone is string &&
+        request.resource.data.status is string &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp;
+
+      allow update: if signedIn() &&
+        (
+          (
+            resource.data.uid == request.auth.uid &&
+            canManageEntrepreneurProfile() &&
+            request.resource.data.id == resource.data.id &&
+            request.resource.data.uid == resource.data.uid
+          ) ||
+          isAdmin()
+        );
+
+      allow delete: if signedIn() &&
+        (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    match /entrepreneur_products/{productId} {
+      allow read: if signedIn() &&
+        (resource.data.ownerUid == request.auth.uid || isAdmin());
+
+      allow create: if signedIn() &&
+        canManageEntrepreneurProfile() &&
+        hasEntrepreneurProductFields() &&
+        request.resource.data.id == productId &&
+        request.resource.data.ownerUid == request.auth.uid &&
+        request.resource.data.businessId == request.auth.uid &&
+        request.resource.data.name is string &&
+        request.resource.data.description is string &&
+        request.resource.data.category is string &&
+        (
+          request.resource.data.price == null ||
+          request.resource.data.price is number
+        ) &&
+        request.resource.data.city is string &&
+        request.resource.data.available is bool &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp;
+
+      allow update: if signedIn() &&
+        (
+          (
+            resource.data.ownerUid == request.auth.uid &&
+            canManageEntrepreneurProfile() &&
+            request.resource.data.id == resource.data.id &&
+            request.resource.data.ownerUid == resource.data.ownerUid &&
+            request.resource.data.businessId == resource.data.businessId &&
+            request.resource.data.createdAt == resource.data.createdAt
+          ) ||
+          isAdmin()
+        );
+
+      allow delete: if signedIn() &&
+        (resource.data.ownerUid == request.auth.uid || isAdmin());
+    }
+
+    match /experiences/{docId} {
+      allow read: if true;
+
+      allow create: if signedIn() &&
+        userRole() in [
+          'emprendedor',
+          'gastronomico',
+          'guia',
+          'administrador',
+          'entrepreneur',
+          'gastronomic',
+          'guide',
+          'admin'
+        ] &&
+        request.resource.data.ownerUid == request.auth.uid;
+
+      allow update, delete: if signedIn() &&
+        (resource.data.ownerUid == request.auth.uid || isAdmin());
+    }
+
+    match /tourist_routes/{docId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn() &&
+        userRole() in ['guia', 'administrador', 'guide', 'admin'] &&
+        request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if signedIn() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+    }
+  }
+}

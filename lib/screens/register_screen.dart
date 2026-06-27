@@ -68,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         uid: user.uid,
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
-        role: 'client',
+        role: 'cliente',
         city: _cityController.text.trim(),
         createdAt: DateTime.now(),
       );

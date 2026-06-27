@@ -1,1 +1,28 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"sumaq-ia","appId":"1:937380202117:android:720041beac61a4d8b70bec","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"sumaq-ia","configurations":{"android":"1:937380202117:android:720041beac61a4d8b70bec","ios":"1:937380202117:ios:2586b5274cce5bdfb70bec","macos":"1:937380202117:ios:2586b5274cce5bdfb70bec","web":"1:937380202117:web:feddc9371f17623cb70bec","windows":"1:937380202117:web:94e0981f4e3bfe06b70bec"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "sumaq-ia",
+          "appId": "1:937380202117:android:720041beac61a4d8b70bec",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "sumaq-ia",
+          "configurations": {
+            "android": "1:937380202117:android:720041beac61a4d8b70bec",
+            "ios": "1:937380202117:ios:2586b5274cce5bdfb70bec",
+            "macos": "1:937380202117:ios:2586b5274cce5bdfb70bec",
+            "web": "1:937380202117:web:feddc9371f17623cb70bec",
+            "windows": "1:937380202117:web:94e0981f4e3bfe06b70bec"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

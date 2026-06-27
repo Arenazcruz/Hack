@@ -1,165 +1,131 @@
 import 'package:flutter/material.dart';
 
-import '../models/entrepreneur_profile.dart';
-import '../models/user_profile.dart';
-import '../services/auth_service.dart';
-import '../services/entrepreneur_service.dart';
-import '../services/firestore_service.dart';
+import '../models/entrepreneur_product.dart';
+import '../services/entrepreneur_product_service.dart';
 import '../widgets/primary_button.dart';
 
-class EntrepreneurProfileScreen extends StatefulWidget {
-  const EntrepreneurProfileScreen({super.key});
+class EntrepreneurProductFormArgs {
+  const EntrepreneurProductFormArgs({this.product});
 
-  static const routeName = '/entrepreneur/profile';
-
-  @override
-  State<EntrepreneurProfileScreen> createState() =>
-      _EntrepreneurProfileScreenState();
+  final EntrepreneurProduct? product;
 }
 
-class _EntrepreneurProfileScreenState extends State<EntrepreneurProfileScreen> {
+class EntrepreneurProductFormScreen extends StatefulWidget {
+  const EntrepreneurProductFormScreen({this.product, super.key});
+
+  static const routeName = '/entrepreneur/products/form';
+
+  final EntrepreneurProduct? product;
+
+  @override
+  State<EntrepreneurProductFormScreen> createState() =>
+      _EntrepreneurProductFormScreenState();
+}
+
+class _EntrepreneurProductFormScreenState
+    extends State<EntrepreneurProductFormScreen> {
   static const _primaryColor = Color(0xFFE8671B);
   static const _backgroundColor = Color(0xFFFFF8F4);
   static const _textColor = Color(0xFF211B17);
   static const _mutedTextColor = Color(0xFF6F625A);
 
   final _formKey = GlobalKey<FormState>();
-  final _businessNameController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _locationController = TextEditingController();
+  final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _socialController = TextEditingController();
-  final _websiteController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _cityController = TextEditingController();
   final _imageUrlController = TextEditingController();
-  final _service = EntrepreneurService();
+  final _service = EntrepreneurProductService();
 
-  EntrepreneurProfile? _existingProfile;
-  UserProfile? _userProfile;
   String? _category;
-  bool _isLoading = true;
+  bool _available = true;
   bool _isSaving = false;
 
   static const _categories = [
-    'Comida tradicional',
+    'Producto gastronómico',
+    'Servicio gastronómico',
+    'Bebida',
     'Repostería',
-    'Bebidas',
-    'Productos artesanales',
-    'Catering',
-    'Experiencia gastronómica',
+    'Experiencia breve',
+    'Paquete turístico',
     'Otro',
   ];
+
+  bool get _isEditing => widget.product != null;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    final product = widget.product;
+
+    if (product != null) {
+      _nameController.text = product.name;
+      _descriptionController.text = product.description;
+      _priceController.text = product.price?.toString() ?? '';
+      _cityController.text = product.city;
+      _imageUrlController.text = product.imageUrl ?? '';
+      _category = product.category.isEmpty ? null : product.category;
+      _available = product.available;
+    }
   }
 
   @override
   void dispose() {
-    _businessNameController.dispose();
-    _cityController.dispose();
-    _locationController.dispose();
+    _nameController.dispose();
     _descriptionController.dispose();
-    _phoneController.dispose();
-    _socialController.dispose();
-    _websiteController.dispose();
+    _priceController.dispose();
+    _cityController.dispose();
     _imageUrlController.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    try {
-      final user = AuthService().currentUser;
-      UserProfile? profile;
-
-      if (user != null) {
-        profile = await FirestoreService().getUserProfile(user.uid);
-      }
-
-      final entrepreneurProfile = await _service.getMyEntrepreneurProfile();
-
-      if (!mounted) {
-        return;
-      }
-
-      _userProfile = profile;
-      _existingProfile = entrepreneurProfile;
-
-      if (entrepreneurProfile != null) {
-        _businessNameController.text = entrepreneurProfile.businessName;
-        _cityController.text = entrepreneurProfile.city;
-        _locationController.text = entrepreneurProfile.location;
-        _descriptionController.text = entrepreneurProfile.description;
-        _phoneController.text = entrepreneurProfile.phone;
-        _socialController.text = entrepreneurProfile.socialUrl ?? '';
-        _websiteController.text = entrepreneurProfile.website ?? '';
-        _imageUrlController.text = entrepreneurProfile.imageUrl ?? '';
-        _category = entrepreneurProfile.category.isEmpty
-            ? null
-            : entrepreneurProfile.category;
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _save() async {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    final user = AuthService().currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Debes iniciar sesión.')));
       return;
     }
 
     setState(() => _isSaving = true);
 
     try {
-      final now = DateTime.now();
-      final profile = EntrepreneurProfile(
-        id: user.uid,
-        uid: user.uid,
-        ownerName: _userProfile?.name.trim().isNotEmpty == true
-            ? _userProfile!.name.trim()
-            : user.displayName ?? user.email ?? 'Emprendedor SUMAQ IA',
-        businessName: _businessNameController.text.trim(),
-        city: _cityController.text.trim(),
-        location: _locationController.text.trim(),
-        category: _category!,
+      final priceText = _priceController.text.trim().replaceAll(',', '.');
+      final price = priceText.isEmpty ? null : double.parse(priceText);
+      final imageUrl = _clean(_imageUrlController.text);
+      final base = widget.product;
+      final product = EntrepreneurProduct(
+        id: base?.id ?? '',
+        ownerUid: base?.ownerUid ?? '',
+        businessId: base?.businessId ?? '',
+        name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
-        phone: _phoneController.text.trim(),
-        socialUrl: _clean(_socialController.text),
-        website: _clean(_websiteController.text),
-        imageUrl: _clean(_imageUrlController.text),
-        status: _existingProfile?.status ?? 'active',
-        createdAt: _existingProfile?.createdAt ?? now,
-        updatedAt: now,
+        category: _category!,
+        price: price,
+        city: _cityController.text.trim(),
+        available: _available,
+        imageUrl: imageUrl,
+        createdAt: base?.createdAt,
+        updatedAt: base?.updatedAt,
       );
 
-      await _service.createOrUpdateProfile(profile);
+      if (_isEditing) {
+        await _service.updateProduct(product);
+      } else {
+        await _service.createProduct(product);
+      }
 
       if (!mounted) {
         return;
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Emprendimiento guardado correctamente.')),
+        SnackBar(
+          content: Text(
+            _isEditing
+                ? 'Producto o servicio actualizado.'
+                : 'Producto o servicio guardado.',
+          ),
+        ),
       );
-      Navigator.pop(context, true);
+      Navigator.pop(context);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -175,13 +141,6 @@ class _EntrepreneurProfileScreenState extends State<EntrepreneurProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: _backgroundColor,
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return Scaffold(
       backgroundColor: _backgroundColor,
       body: SafeArea(
@@ -189,7 +148,7 @@ class _EntrepreneurProfileScreenState extends State<EntrepreneurProfileScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 980),
+              constraints: const BoxConstraints(maxWidth: 880),
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -219,21 +178,23 @@ class _EntrepreneurProfileScreenState extends State<EntrepreneurProfileScreen> {
                             color: _textColor,
                           ),
                           const SizedBox(width: 8),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Perfil del emprendimiento',
-                                  style: TextStyle(
+                                  _isEditing
+                                      ? 'Editar producto o servicio'
+                                      : 'Agregar producto o servicio',
+                                  style: const TextStyle(
                                     color: _textColor,
                                     fontSize: 24,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Registra o actualiza los datos visibles de tu emprendimiento gastronómico.',
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Completa la información que ofrecerá tu emprendimiento.',
                                   style: TextStyle(
                                     color: _mutedTextColor,
                                     fontSize: 14,
@@ -247,20 +208,8 @@ class _EntrepreneurProfileScreenState extends State<EntrepreneurProfileScreen> {
                       ),
                       const SizedBox(height: 24),
                       _field(
-                        controller: _businessNameController,
-                        label: 'Nombre del emprendimiento',
-                        validator: _required,
-                      ),
-                      const SizedBox(height: 14),
-                      _field(
-                        controller: _cityController,
-                        label: 'Ciudad',
-                        validator: _required,
-                      ),
-                      const SizedBox(height: 14),
-                      _field(
-                        controller: _locationController,
-                        label: 'Dirección o zona',
+                        controller: _nameController,
+                        label: 'Nombre del producto o servicio',
                         validator: _required,
                       ),
                       const SizedBox(height: 14),
@@ -290,22 +239,36 @@ class _EntrepreneurProfileScreenState extends State<EntrepreneurProfileScreen> {
                       ),
                       const SizedBox(height: 14),
                       _field(
-                        controller: _phoneController,
-                        label: 'Teléfono de contacto',
-                        keyboardType: TextInputType.phone,
+                        controller: _priceController,
+                        label: 'Precio referencial',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        validator: _price,
+                      ),
+                      const SizedBox(height: 14),
+                      _field(
+                        controller: _cityController,
+                        label: 'Ciudad',
                         validator: _required,
                       ),
                       const SizedBox(height: 14),
-                      _field(
-                        controller: _socialController,
-                        label: 'Red social',
-                        keyboardType: TextInputType.url,
-                      ),
-                      const SizedBox(height: 14),
-                      _field(
-                        controller: _websiteController,
-                        label: 'Sitio web opcional',
-                        keyboardType: TextInputType.url,
+                      SwitchListTile(
+                        value: _available,
+                        onChanged: _isSaving
+                            ? null
+                            : (value) => setState(() => _available = value),
+                        contentPadding: EdgeInsets.zero,
+                        activeThumbColor: _primaryColor,
+                        title: const Text(
+                          'Disponible',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        subtitle: Text(
+                          _available
+                              ? 'Se mostrará como disponible.'
+                              : 'Se mostrará como no disponible.',
+                        ),
                       ),
                       const SizedBox(height: 14),
                       _field(
@@ -315,9 +278,11 @@ class _EntrepreneurProfileScreenState extends State<EntrepreneurProfileScreen> {
                       ),
                       const SizedBox(height: 24),
                       PrimaryButton(
-                        label: 'Guardar emprendimiento',
+                        label: _isEditing
+                            ? 'Actualizar producto'
+                            : 'Guardar producto',
                         isLoading: _isSaving,
-                        onPressed: _save,
+                        onPressed: _submit,
                       ),
                     ],
                   ),
@@ -380,9 +345,22 @@ class _EntrepreneurProfileScreenState extends State<EntrepreneurProfileScreen> {
     if (text.isEmpty) {
       return 'Campo obligatorio';
     }
-    if (text.length < 20) {
-      return 'La descripción debe tener al menos 20 caracteres';
+    if (text.length < 10) {
+      return 'La descripción debe tener al menos 10 caracteres';
     }
+    return null;
+  }
+
+  String? _price(String? value) {
+    final text = value?.trim().replaceAll(',', '.') ?? '';
+    if (text.isEmpty) {
+      return null;
+    }
+
+    if (double.tryParse(text) == null) {
+      return 'Ingresa un precio numérico';
+    }
+
     return null;
   }
 }

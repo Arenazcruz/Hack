@@ -27,7 +27,7 @@ class AdminSeedService {
         uid: user.uid,
         name: 'Administrador SUMAQ IA',
         email: adminEmail,
-        role: 'admin',
+        role: 'administrador',
         city: 'La Paz',
         createdAt: DateTime.now(),
       ),

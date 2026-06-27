@@ -8,11 +8,16 @@ import 'screens/admin_home_screen.dart';
 import 'screens/client_home_screen.dart';
 import 'screens/create_experience_screen.dart';
 import 'screens/entrepreneur_home_screen.dart';
+import 'screens/entrepreneur_product_form_screen.dart';
+import 'screens/entrepreneur_products_screen.dart';
 import 'screens/entrepreneur_profile_screen.dart';
 import 'screens/experience_detail_screen.dart';
 import 'screens/experience_list_screen.dart';
+import 'screens/entrepreneur_request_form_screen.dart';
+import 'screens/gastronomic_request_form_screen.dart';
 import 'screens/gastronomic_home_screen.dart';
 import 'screens/gastronomic_route_screen.dart';
+import 'screens/guide_request_form_screen.dart';
 import 'screens/guide_home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -48,6 +53,12 @@ class SumaqRutaApp extends StatelessWidget {
           WelcomeScreen.welcomeRouteName: (_) => const WelcomeScreen(),
           LoginScreen.routeName: (_) => const LoginScreen(),
           RegisterScreen.routeName: (_) => const RegisterScreen(),
+          EntrepreneurRequestFormScreen.routeName: (_) =>
+              const EntrepreneurRequestFormScreen(),
+          GastronomicRequestFormScreen.routeName: (_) =>
+              const GastronomicRequestFormScreen(),
+          GuideRequestFormScreen.routeName: (_) =>
+              const GuideRequestFormScreen(),
           ClientHomeScreen.routeName: (_) => const ClientHomeScreen(),
           EntrepreneurHomeScreen.routeName: (_) =>
               const EntrepreneurHomeScreen(),
@@ -57,6 +68,16 @@ class SumaqRutaApp extends StatelessWidget {
           AdminHomeScreen.routeName: (_) => const AdminHomeScreen(),
           EntrepreneurProfileScreen.routeName: (_) =>
               const EntrepreneurProfileScreen(),
+          EntrepreneurProductsScreen.routeName: (_) =>
+              const EntrepreneurProductsScreen(),
+          EntrepreneurProductFormScreen.routeName: (context) {
+            final args = ModalRoute.of(context)?.settings.arguments;
+            return EntrepreneurProductFormScreen(
+              product: args is EntrepreneurProductFormArgs
+                  ? args.product
+                  : null,
+            );
+          },
           CreateExperienceScreen.routeName: (_) =>
               const CreateExperienceScreen(),
           ExperienceListScreen.routeName: (_) => const ExperienceListScreen(),

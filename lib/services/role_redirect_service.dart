@@ -38,6 +38,7 @@ class RoleRedirectService {
         _go(context, TouristHomeScreen.routeName);
         return;
       case 'admin':
+      case 'administrador':
         _go(context, AdminHomeScreen.routeName);
         return;
       default:

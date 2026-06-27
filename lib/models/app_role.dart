@@ -4,7 +4,7 @@ extension AppRoleLabel on AppRole {
   String get label {
     switch (this) {
       case AppRole.entrepreneur:
-        return 'Emprendedor gastronomico';
+        return 'Emprendedor gastronómico';
       case AppRole.tourist:
         return 'Turista';
     }
